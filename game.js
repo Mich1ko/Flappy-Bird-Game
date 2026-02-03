@@ -18,14 +18,24 @@ let bird = {
   gravity: 0.6,
   jumpPower: -15,
   grounded: false,
-};
 
-jump(); {
+
+jump() {
   this.velY = this.jumpPower;
-  this.grounded = false;
-  this.velY += 10; // small boost to jump
+},
 
+gravity() {
+  this.velY += this.gravity;
+  this.y += this.velY;
+  
+},
+
+draw() {
+    ctx.fillRect(this.x, this.y, this.size, this.size);
+  }
 };
+
+bird.jump();
 
 const ground = canvas.height - 100;
 
@@ -36,13 +46,13 @@ function update() {
   if (gameState === "START") return;
   if (keys["ArrowRight"] || keys["d"]) box.x += speed;
   if (keys["ArrowLeft"] || keys["a"]) box.x -= speed;
-  box.velY += box.gravity;
-  box.y += box.velY;
+  bird.velY += bird.gravity;
+  bird.y += bird.velY;
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillRect(box.x, box.y, box.size, box.size);
+  ctx.fillRect(bird.x, bird.y, bird.size, bird.size);
 }
 
 function loop() {
