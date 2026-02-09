@@ -5,7 +5,7 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
 
-let gameState = "START";
+let gameState = "PLAY";
 
 canvas.width = 480;
 canvas.height = 640;
@@ -44,7 +44,7 @@ const ground = canvas.height - 100;
 const speed = 5;
 
 function update() {
-  // game logic goes here
+  // game logic 
   if (gameState === "START") return;
   if (keys["ArrowRight"] || keys["d"]) bird.x += speed;
   if (keys["ArrowLeft"] || keys["a"]) bird.x -= speed;
@@ -54,15 +54,25 @@ function update() {
     bird.velY = 0;
     bird.grounded = true;
   }
+  // clamp horizontal position so bird stays on canvas
+  if (bird.x < 0) bird.x = 0;
+  if (bird.x + bird.size > canvas.width) bird.x = canvas.width - bird.size;
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillRect(bird.x, bird.y, bird.size, bird.size);
+  ctx.fillStyle = '#000';
+  bird.draw();
 }
 
 const keys = {};
 window.addEventListener("keydown", (e) => {
+  // handle jump on Space immediately and prevent default scrolling
+  if (e.code === "Space") {
+    e.preventDefault();
+    bird.jump();
+    return;
+  }
   keys[e.key] = true;
 });
 
@@ -75,8 +85,13 @@ function loop() {
 loop();
 
 window.addEventListener("keyup", (e) => {
-  keys[e.key] = true;
-  if (e.code === "Space") {
-    bird.jump();
-  }
+  // release key state on keyup
+  keys[e.key] = false;
 });
+
+let singlePipe = {
+  x: 300,
+  gapY: 50,
+  gapHeight: 200,
+  
+};
