@@ -4,8 +4,9 @@ const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
+const gameContainer = document.getElementById("game-container");
 
-let gameState = "PLAY";
+let gameState = "START";
 
 canvas.width = 480;
 canvas.height = 640;
@@ -123,24 +124,22 @@ function draw() {
 const keys = {};
 window.addEventListener("keydown", (e) => {
   // handle jump on Space immediately and prevent default scrolling
-  if (e.code !== "Space") {
+  if (e.code === "Space") {
     e.preventDefault();
     // START LOGIC
      
       if (gameState === "START") {
         startScreen.classList.add("hidden");
+        gameState = "PLAY"
         bird.velY = 0;
         return;
       }
 
       // JUMP LOGIC
       if (gameState === "PLAY") {
-        
+        bird.velY = bird.jumpPower
       }
-    
-
-    bird.jump();
-    return;
+        return;
   }
   keys[e.key] = true;
 });
