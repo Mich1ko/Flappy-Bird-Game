@@ -123,8 +123,22 @@ function draw() {
 const keys = {};
 window.addEventListener("keydown", (e) => {
   // handle jump on Space immediately and prevent default scrolling
-  if (e.code === "Space") {
+  if (e.code !== "Space") {
     e.preventDefault();
+    // START LOGIC
+     
+      if (gameState === "START") {
+        startScreen.classList.add("hidden");
+        bird.velY = 0;
+        return;
+      }
+
+      // JUMP LOGIC
+      if (gameState === "PLAY") {
+        
+      }
+    
+
     bird.jump();
     return;
   }
@@ -170,5 +184,3 @@ function createPipe() {
     passed: false // track if bird has passed this pipe for scoring
   });
 }
-
-

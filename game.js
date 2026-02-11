@@ -141,6 +141,10 @@ loop();
 
 window.addEventListener("keyup", (e) => {
   // release key state on keyup
+  if (e.code === "Space") {
+    e.preventDefault();
+    return; 
+  }
   keys[e.key] = false;
 });
 
@@ -170,8 +174,4 @@ function createPipe() {
     passed: false // track if bird has passed this pipe for scoring
     
   });
-
-
 }
-
-
