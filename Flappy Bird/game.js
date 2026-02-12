@@ -6,6 +6,13 @@ const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
 const gameContainer = document.getElementById("game-container");
 
+const birdImage = new Image();
+birdImg.src = "assets/flappy-bird.png";
+
+birdImg.onload = () => {
+  console.log("Bird image loaded");
+};
+
 let gameState = "START";
 
 canvas.width = 480;
@@ -22,8 +29,6 @@ let bird = {
 
 
 jump() {
-  if (!this.grounded) return;
-
   this.velY = this.jumpPower;
   this.grounded = false;
 },
@@ -46,7 +51,7 @@ const speed = 5;
 // pipes and scoring
 let pipes = [];
 let pipeSpeed = 3;
-let pipeSpawnTimer = 0;
+let pipeSpawnTimer = pipeSpawnInterval
 const pipeSpawnInterval = 150; // frames
 let score = 0;
 scoreEl.textContent = score;
@@ -57,11 +62,6 @@ function update() {
   if (keys["ArrowRight"] || keys["d"]) bird.x += speed;
   if (keys["ArrowLeft"] || keys["a"]) bird.x -= speed;
   bird.applyGravity();
-  if (bird.y + bird.size >= ground) {
-    bird.y = ground - bird.size;
-    bird.velY = 0;
-    bird.grounded = true;
-  }
   // clamp horizontal position so bird stays on canvas
   if (bird.x < 0) bird.x = 0;
   if (bird.x + bird.size > canvas.width) bird.x = canvas.width - bird.size;
@@ -94,6 +94,7 @@ function update() {
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
       finalScore.textContent = score;
+      gameOverScreen.classList.remove("hidden")
     }
 
     // remove offscreen pipes

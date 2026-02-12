@@ -4,8 +4,16 @@ const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
+const gameContainer = document.getElementById("game-container");
 
-let gameState = "PLAY";
+const birdImage = new Image();
+birdImage.src = "assets/flappy-bird.png";
+
+birdImage.onload = () => {
+  console.log("Bird image loaded");
+};
+
+let gameState = "START";
 
 canvas.width = 480;
 canvas.height = 640;
@@ -21,8 +29,6 @@ let bird = {
 
 
 jump() {
-  if (!this.grounded) return;
-
   this.velY = this.jumpPower;
   this.grounded = false;
 },
@@ -56,11 +62,6 @@ function update() {
   if (keys["ArrowRight"] || keys["d"]) bird.x += speed;
   if (keys["ArrowLeft"] || keys["a"]) bird.x -= speed;
   bird.applyGravity();
-  if (bird.y + bird.size >= ground) {
-    bird.y = ground - bird.size;
-    bird.velY = 0;
-    bird.grounded = true;
-  }
   // clamp horizontal position so bird stays on canvas
   if (bird.x < 0) bird.x = 0;
   if (bird.x + bird.size > canvas.width) bird.x = canvas.width - bird.size;
@@ -93,6 +94,7 @@ function update() {
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
       finalScore.textContent = score;
+      gameOverScreen.classList.remove("hidden")
     }
 
     // remove offscreen pipes
@@ -125,8 +127,20 @@ window.addEventListener("keydown", (e) => {
   // handle jump on Space immediately and prevent default scrolling
   if (e.code === "Space") {
     e.preventDefault();
-    bird.jump();
-    return;
+    // START LOGIC
+     
+      if (gameState === "START") {
+        startScreen.classList.add("hidden");
+        gameState = "PLAY"
+        bird.velY = 0;
+        return;
+      }
+
+      // JUMP LOGIC
+      if (gameState === "PLAY") {
+        bird.velY = bird.jumpPower
+      }
+        return;
   }
   keys[e.key] = true;
 });
@@ -141,10 +155,6 @@ loop();
 
 window.addEventListener("keyup", (e) => {
   // release key state on keyup
-  if (e.code === "Space") {
-    e.preventDefault();
-    return; 
-  }
   keys[e.key] = false;
 });
 
@@ -172,6 +182,5 @@ function createPipe() {
     width: 60,
     gapHeight: singlePipe.gapHeight,
     passed: false // track if bird has passed this pipe for scoring
-    
   });
 }
