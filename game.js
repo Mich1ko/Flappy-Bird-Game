@@ -23,8 +23,8 @@ let bird = {
   y: 100,
   size: 50,
   velY: 0,
-  gravity: 0.6,
-  jumpPower: -15,
+  gravity: 0.2,
+  jumpPower: -6,
   grounded: false,
 
 
@@ -40,7 +40,9 @@ applyGravity() {
 },
 
 draw() {
+    ctx.fillStyle = "Black"
     ctx.fillRect(this.x, this.y, this.size, this.size);
+    ctx.drawImage(birdImage, this.x, this.y, this.size, this.size)
   }
 };
 
@@ -160,7 +162,7 @@ window.addEventListener("keyup", (e) => {
 
 let singlePipe = {
   x: 300,
-  gapY: 50,
+  gapY: 65,
   gapHeight: 200,
 };
 
@@ -179,7 +181,7 @@ function createPipe() {
   pipes.push({
     x: canvas.width,
     gapY: gapY,
-    width: 60,
+    width: 65,
     gapHeight: singlePipe.gapHeight,
     passed: false // track if bird has passed this pipe for scoring
   });
