@@ -26,6 +26,8 @@ let bird = {
   gravity: 0.2,
   jumpPower: -6,
   grounded: false,
+  rotation: 0,
+  rotationTarget: 0,
 
 
 jump() {
@@ -36,18 +38,39 @@ jump() {
 applyGravity() {
   this.velY += this.gravity;
   this.y += this.velY;
+  // tilt bird up when moving upward, down when falling
+  this.rotation = this.velY * 0.1
+
+  if (this.rotation > 1) this.rotation = 1;
+  if (this.rotation < -1) this.rotation = -1;
   
 },
 
 draw() {
-    ctx.fillStyle = "Black"
-    ctx.fillRect(this.x, this.y, this.size, this.size);
-    ctx.drawImage(birdImage, this.x, this.y, this.size, this.size)
+    ctx.save();
+
+  // move origin to center of bird
+  ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+
+  // rotate
+  ctx.rotate(this.rotation);
+
+  // draw image centered
+  ctx.drawImage(
+    birdImage,
+    -this.size / 2,
+    -this.size / 2,
+    this.size,
+    this.size
+  );
+
+  ctx.restore();
+    
   }
 };
 
 
-const ground = canvas.height - 100;
+const ground = canvas.height - 1;
 
 const speed = 5;
 // pipes and scoring
@@ -185,4 +208,5 @@ function createPipe() {
     gapHeight: singlePipe.gapHeight,
     passed: false // track if bird has passed this pipe for scoring
   });
+  
 }
