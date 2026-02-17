@@ -4,6 +4,7 @@ const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
+const restartBtn = document.getElementById("restartBtn");
 const gameContainer = document.getElementById("game-container");
 
 const birdImage = new Image();
@@ -14,6 +15,7 @@ birdImage.onload = () => {
 };
 
 let gameState = "START";
+let canRestart = false;
 
 canvas.width = 480;
 canvas.height = 640;
@@ -119,7 +121,12 @@ function update() {
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
       finalScore.textContent = score;
-      gameOverScreen.classList.remove("hidden")
+      gameOverScreen.classList.remove("hidden");
+      // prevent immediate restart; allow after 5 seconds
+      canRestart = false;
+      setTimeout(() => {
+        canRestart = true;
+      }, 2000);
     }
 
     // remove offscreen pipes
@@ -163,9 +170,15 @@ window.addEventListener("keydown", (e) => {
 
       // JUMP LOGIC
       if (gameState === "PLAY") {
-        bird.velY = bird.jumpPower
-      }
+        bird.velY = bird.jumpPower;
         return;
+      }
+
+      // RESTART FROM GAMEOVER
+      if (gameState === "GAMEOVER" && canRestart) {
+        resetGame(); 
+        return;
+      }
   }
   keys[e.key] = true;
 });
@@ -208,5 +221,27 @@ function createPipe() {
     gapHeight: singlePipe.gapHeight,
     passed: false // track if bird has passed this pipe for scoring
   });
-  
 }
+
+function resetGame() {
+  
+  // reset bird
+  bird.x = 100;
+  bird.y = 100;
+  bird.velY = 0;
+  bird.rotation = 0;
+  // resetting the pipes
+  pipes = [];
+  // reset score
+  score = 0;
+  scoreEl.textContent = score;
+  // reset timers
+  pipeSpawnTimer = 0;
+  // reset game state
+  gameState = "PLAY";
+  // hide game over screen
+  gameOverScreen.classList.add("hidden");
+}
+
+// attach restart button
+if (restartBtn) restartBtn.addEventListener("click", resetGame);
