@@ -4,16 +4,21 @@ const startScreen = document.getElementById("startScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const scoreEl = document.getElementById("score");
 const finalScore = document.getElementById("finalScore");
+const restartBtn = document.getElementById("restartBtn");
 const gameContainer = document.getElementById("game-container");
 
 const birdImage = new Image();
-birdImg.src = "assets/flappy-bird.png";
+birdImage.src = "assets/flappy-bird.png";
 
-birdImg.onload = () => {
+const pipeImage = new Image();
+pipesImage.src = "assets/pipes-image.jpg"
+
+birdImage.onload = () => {
   console.log("Bird image loaded");
 };
 
 let gameState = "START";
+let canRestart = false;
 
 canvas.width = 480;
 canvas.height = 640;
@@ -23,9 +28,11 @@ let bird = {
   y: 100,
   size: 50,
   velY: 0,
-  gravity: 0.6,
-  jumpPower: -15,
+  gravity: 0.2,
+  jumpPower: -6,
   grounded: false,
+  rotation: 0,
+  rotationTarget: 0,
 
 
 jump() {
@@ -36,22 +43,45 @@ jump() {
 applyGravity() {
   this.velY += this.gravity;
   this.y += this.velY;
+  // tilt bird up when moving upward, down when falling
+  this.rotation = this.velY * 0.1
+
+  if (this.rotation > 1) this.rotation = 1;
+  if (this.rotation < -1) this.rotation = -1;
   
 },
 
 draw() {
-    ctx.fillRect(this.x, this.y, this.size, this.size);
+    ctx.save();
+
+  // move origin to center of bird
+  ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
+
+  // rotate
+  ctx.rotate(this.rotation);
+
+  // draw image centered
+  ctx.drawImage(
+    birdImage,
+    -this.size / 2,
+    -this.size / 2,
+    this.size,
+    this.size
+  );
+
+  ctx.restore();
+    
   }
 };
 
 
-const ground = canvas.height - 100;
+const ground = canvas.height - 1;
 
 const speed = 5;
 // pipes and scoring
 let pipes = [];
 let pipeSpeed = 3;
-let pipeSpawnTimer = pipeSpawnInterval
+let pipeSpawnTimer = 0;
 const pipeSpawnInterval = 150; // frames
 let score = 0;
 scoreEl.textContent = score;
@@ -94,7 +124,12 @@ function update() {
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
       finalScore.textContent = score;
-      gameOverScreen.classList.remove("hidden")
+      gameOverScreen.classList.remove("hidden");
+      // prevent immediate restart; allow after 5 seconds
+      canRestart = false;
+      setTimeout(() => {
+        canRestart = true;
+      }, 2000);
     }
 
     // remove offscreen pipes
@@ -138,9 +173,15 @@ window.addEventListener("keydown", (e) => {
 
       // JUMP LOGIC
       if (gameState === "PLAY") {
-        bird.velY = bird.jumpPower
-      }
+        bird.velY = bird.jumpPower;
         return;
+      }
+
+      // RESTART FROM GAMEOVER
+      if (gameState === "GAMEOVER" && canRestart) {
+        resetGame(); 
+        return;
+      }
   }
   keys[e.key] = true;
 });
@@ -160,7 +201,7 @@ window.addEventListener("keyup", (e) => {
 
 let singlePipe = {
   x: 300,
-  gapY: 50,
+  gapY: 65,
   gapHeight: 200,
 };
 
@@ -179,8 +220,31 @@ function createPipe() {
   pipes.push({
     x: canvas.width,
     gapY: gapY,
-    width: 60,
+    width: 65,
     gapHeight: singlePipe.gapHeight,
     passed: false // track if bird has passed this pipe for scoring
   });
 }
+
+function resetGame() {
+  
+  // reset bird
+  bird.x = 100;
+  bird.y = 100;
+  bird.velY = 0;
+  bird.rotation = 0;
+  // resetting the pipes
+  pipes = [];
+  // reset score
+  score = 0;
+  scoreEl.textContent = score;
+  // reset timers
+  pipeSpawnTimer = 0;
+  // reset game state
+  gameState = "PLAY";
+  // hide game over screen
+  gameOverScreen.classList.add("hidden");
+}
+
+// attach restart button
+if (restartBtn) restartBtn.addEventListener("click", resetGame);
