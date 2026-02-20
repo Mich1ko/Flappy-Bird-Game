@@ -10,6 +10,13 @@ const gameContainer = document.getElementById("game-container");
 const birdImage = new Image();
 birdImage.src = "assets/flappy-bird.png";
 
+const pipeImage = new Image();
+pipeImage.src = "assets/pipes-image.jpg";
+
+pipeImage.onload = () => {
+  console.log("Pipe image loaded");
+};
+
 birdImage.onload = () => {
   console.log("Bird image loaded");
 };
@@ -81,7 +88,7 @@ let pipeSpeed = 3;
 let pipeSpawnTimer = 0;
 const pipeSpawnInterval = 150; // frames
 let score = 0;
-scoreEl.textContent = score;
+if (scoreEl) scoreEl.textContent = score;
 
 function update() {
   // only update during play
@@ -109,7 +116,7 @@ function update() {
     if (!p.passed && p.x + p.width < bird.x) {
       p.passed = true;
       score += 1;
-      scoreEl.textContent = score;
+      if (scoreEl) scoreEl.textContent = score;
     }
 
     // collision detection (AABB)
@@ -120,7 +127,7 @@ function update() {
 
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
-      finalScore.textContent = score;
+      if (finalScore) finalScore.textContent = score;
       gameOverScreen.classList.remove("hidden");
       // prevent immediate restart; allow after 5 seconds
       canRestart = false;
@@ -142,15 +149,25 @@ function draw() {
   bird.draw();
 
   for (let pipe of pipes) {
-    // top pipe 
-    ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapY);
-    // bottom pipe
-    ctx.fillRect(
-      pipe.x,
-      pipe.gapY + pipe.gapHeight,
-      pipe.width,
-      ground - (pipe.gapY + pipe.gapHeight)
-    )
+    const topHeight = pipe.gapY;
+    const bottomY = pipe.gapY + pipe.gapHeight;
+    const bottomHeight = ground - bottomY;
+
+    if (pipeImage && pipeImage.complete && pipeImage.naturalWidth !== 0) {
+      // draw top pipe flipped vertically so it points downwards
+      ctx.save();
+      ctx.translate(pipe.x, pipe.gapY);
+      ctx.scale(1, -1);
+      ctx.drawImage(pipeImage, 0, 0, pipe.width, topHeight);
+      ctx.restore();
+
+      // draw bottom pipe normally
+      ctx.drawImage(pipeImage, pipe.x, bottomY, pipe.width, bottomHeight);
+    } else {
+      // fallback to simple rectangles if image not loaded
+      ctx.fillRect(pipe.x, 0, pipe.width, topHeight);
+      ctx.fillRect(pipe.x, bottomY, pipe.width, bottomHeight);
+    }
   }
 }
 
@@ -234,7 +251,7 @@ function resetGame() {
   pipes = [];
   // reset score
   score = 0;
-  scoreEl.textContent = score;
+  if (scoreEl) scoreEl.textContent = score;
   // reset timers
   pipeSpawnTimer = 0;
   // reset game state
