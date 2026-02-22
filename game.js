@@ -90,6 +90,9 @@ const pipeSpawnInterval = 150; // frames
 let score = 0;
 if (scoreEl) scoreEl.textContent = score;
 
+// AABB overlap test moved out of the per-pipe loop to avoid re-creating
+const rectsOverlap = (r1, r2) => !(r1.x + r1.w < r2.x || r1.x > r2.x + r2.w || r1.y + r1.h < r2.y || r1.y > r2.y + r2.h);
+
 function update() {
   // only update during play
   if (gameState !== "PLAY") return;
@@ -108,6 +111,7 @@ function update() {
   }
 
   // update pipes (move, score, collision, cleanup)
+  const birdRect = { x: bird.x, y: bird.y, w: bird.size, h: bird.size };
   for (let i = pipes.length - 1; i >= 0; i--) {
     const p = pipes[i];
     p.x -= pipeSpeed;
@@ -120,16 +124,14 @@ function update() {
     }
 
     // collision detection (AABB)
-    const birdRect = { x: bird.x, y: bird.y, w: bird.size, h: bird.size };
     const topRect = { x: p.x, y: 0, w: p.width, h: p.gapY };
     const bottomRect = { x: p.x, y: p.gapY + p.gapHeight, w: p.width, h: ground - (p.gapY + p.gapHeight) };
-    const rectsOverlap = (r1, r2) => !(r1.x + r1.w < r2.x || r1.x > r2.x + r2.w || r1.y + r1.h < r2.y || r1.y > r2.y + r2.h);
 
     if (rectsOverlap(birdRect, topRect) || rectsOverlap(birdRect, bottomRect)) {
       gameState = "GAMEOVER";
       if (finalScore) finalScore.textContent = score;
       gameOverScreen.classList.remove("hidden");
-      // prevent immediate restart; allow after 5 seconds
+      // prevent immediate restart; allow after 2 seconds
       canRestart = false;
       setTimeout(() => {
         canRestart = true;
@@ -153,15 +155,18 @@ function draw() {
     const bottomY = pipe.gapY + pipe.gapHeight;
     const bottomHeight = ground - bottomY;
 
-    if (pipeImage && pipeImage.complete && pipeImage.naturalWidth !== 0) {
-      // draw top pipe flipped vertically so it points downwards
+    // If we pre-rendered per-pipe bitmaps, draw those (faster than per-frame transforms)
+    if (pipe.topImage && pipe.bottomImage) {
+      ctx.drawImage(pipe.topImage, pipe.x, 0);
+      ctx.drawImage(pipe.bottomImage, pipe.x, bottomY);
+    } else if (pipeImage && pipeImage.complete && pipeImage.naturalWidth !== 0) {
+      // fallback for pipes created before optimization or if offscreen creation failed
       ctx.save();
       ctx.translate(pipe.x, pipe.gapY);
       ctx.scale(1, -1);
       ctx.drawImage(pipeImage, 0, 0, pipe.width, topHeight);
       ctx.restore();
 
-      // draw bottom pipe normally
       ctx.drawImage(pipeImage, pipe.x, bottomY, pipe.width, bottomHeight);
     } else {
       // fallback to simple rectangles if image not loaded
@@ -231,13 +236,47 @@ function getRandomGapY() {
 function createPipe() {
   const gapY = getRandomGapY();
 
-  pipes.push({
+  const width = 65;
+  const gapHeight = singlePipe.gapHeight;
+  const topHeight = gapY;
+  const bottomHeight = ground - (gapY + gapHeight);
+
+  const pipeObj = {
     x: canvas.width,
     gapY: gapY,
-    width: 65,
-    gapHeight: singlePipe.gapHeight,
-    passed: false // track if bird has passed this pipe for scoring
-  });
+    width: width,
+    gapHeight: gapHeight,
+    passed: false
+  };
+
+  // Pre-render scaled/flipped pipe bitmaps per-pipe to avoid per-frame transforms
+  if (pipeImage && pipeImage.complete && pipeImage.naturalWidth !== 0) {
+    try {
+      const topCanvas = document.createElement('canvas');
+      topCanvas.width = width;
+      topCanvas.height = Math.max(0, topHeight);
+      const tctx = topCanvas.getContext('2d');
+      tctx.save();
+      tctx.translate(0, topCanvas.height);
+      tctx.scale(1, -1);
+      tctx.drawImage(pipeImage, 0, 0, pipeImage.width, pipeImage.height, 0, 0, width, topCanvas.height);
+      tctx.restore();
+
+      const bottomCanvas = document.createElement('canvas');
+      bottomCanvas.width = width;
+      bottomCanvas.height = Math.max(0, bottomHeight);
+      const bctx = bottomCanvas.getContext('2d');
+      bctx.drawImage(pipeImage, 0, 0, pipeImage.width, pipeImage.height, 0, 0, width, bottomCanvas.height);
+
+      pipeObj.topImage = topCanvas;
+      pipeObj.bottomImage = bottomCanvas;
+    } catch (err) {
+      // if offscreen creation fails, fall back to drawing directly each frame
+      console.warn('Pipe pre-render failed', err);
+    }
+  }
+
+  pipes.push(pipeObj);
 }
 
 function resetGame() {
